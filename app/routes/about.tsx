@@ -21,34 +21,36 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
+const CARD_EFFECTS = ["wave", "shield", "confetti", "glow"] as const;
+
 const values = [
   {
     icon: <People24Filled className="text-2xl" />,
     title: "Community",
     description:
       "Every player matters. We foster a welcoming environment where friendships are built and everyone has a voice.",
-    easterEgg: false,
+    effect: CARD_EFFECTS[0],
   },
   {
     icon: <Shield24Filled className="text-2xl" />,
     title: "Fair Play",
     description:
       "Rules apply to everyone equally. No exploits, no griefing, no exceptions.",
-    easterEgg: false,
+    effect: CARD_EFFECTS[1],
   },
   {
     icon: <Money24Filled className="text-2xl" />,
     title: "No Pay-to-Win",
     description:
       "Your wallet doesn't define your progress. Skill, creativity, and dedication do.",
-    easterEgg: true,
+    effect: CARD_EFFECTS[2],
   },
   {
     icon: <Lightbulb24Filled className="text-2xl" />,
     title: "Creativity",
     description:
       "Build, design, and express yourself. Our events and world give you the canvas.",
-    easterEgg: false,
+    effect: CARD_EFFECTS[3],
   },
 ];
 
@@ -62,11 +64,61 @@ const rules = [
   "Have fun!",
 ];
 
+function spawnConfetti(cx: number, cy: number) {
+  const colors = ["#2d6a4f", "#4aedd9", "#fcdb05", "#ff3333", "#95d5b2", "#8B6914", "#d8f3dc"];
+  const pieceCount = 12 + Math.floor(Math.random() * 8);
+
+  for (let i = 0; i < pieceCount; i++) {
+    const piece = document.createElement("div");
+    const size = Math.random() * 8 + 4;
+    const angle = (Math.PI * 2 * i) / pieceCount + (Math.random() - 0.5) * 0.5;
+    const distance = 100 + Math.random() * 180;
+    piece.style.cssText = `
+      position: fixed;
+      left: ${cx}px;
+      top: ${cy}px;
+      width: ${size}px;
+      height: ${size * (0.4 + Math.random() * 0.6)}px;
+      background: ${colors[Math.floor(Math.random() * colors.length)]};
+      z-index: 100;
+      pointer-events: none;
+      transform-style: preserve-3d;
+    `;
+    document.body.appendChild(piece);
+
+    const dx = Math.cos(angle) * distance;
+    const dy = Math.sin(angle) * distance;
+
+    animate(piece, {
+      translateX: [0, dx],
+      translateY: [0, dy],
+      rotateX: [0, 360 + Math.random() * 360],
+      rotateY: [0, 360 + Math.random() * 360],
+      rotateZ: [0, (Math.random() - 0.5) * 720],
+      scale: [0.2, 1.4, 1],
+      duration: 1400 + Math.random() * 600,
+      ease: "outQuad",
+    });
+
+      setTimeout(() => {
+        animate(piece, {
+          translateY: [dy, dy + window.innerHeight * 3.5],
+          rotateX: ["+2880"],
+          rotateY: ["+2880"],
+          rotateZ: ["+4320"],
+          opacity: [1, 0],
+          duration: 9500,
+          ease: "inQuad",
+        });
+        setTimeout(() => piece.remove(), 5000);
+      }, 1400);
+  }
+}
+
 export default function About() {
   const valuesRef = useRef<HTMLDivElement>(null);
   const rulesRef = useRef<HTMLDivElement>(null);
 
-  // Animate on scroll
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -93,39 +145,99 @@ export default function About() {
     return () => observer.disconnect();
   }, []);
 
-  // Easter egg: confetti on "No Pay-to-Win" card
-  const handleP2WClick = useCallback(() => {
-    const clicks = incrementP2WClicks();
-    if (clicks >= 3) {
-      // Create confetti
-      const colors = ["#2d6a4f", "#4aedd9", "#fcdb05", "#ff3333", "#95d5b2"];
-      for (let i = 0; i < 30; i++) {
-        const confetti = document.createElement("div");
-        confetti.style.cssText = `
-          position: fixed;
-          top: -10px;
-          left: ${Math.random() * 100}vw;
-          width: ${Math.random() * 8 + 4}px;
-          height: ${Math.random() * 8 + 4}px;
-          background: ${colors[Math.floor(Math.random() * colors.length)]};
-          z-index: 100;
-          pointer-events: none;
-        `;
-        document.body.appendChild(confetti);
+  const handleCardClick = useCallback(
+    (effect: string, e: React.MouseEvent<HTMLDivElement>) => {
+      const card = e.currentTarget;
+      const rect = card.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
 
-        animate(confetti, {
-          translateY: [0, window.innerHeight + 20],
-          translateX: [(Math.random() - 0.5) * 200],
-          rotate: [0, Math.random() * 720],
-          opacity: [1, 0],
-          duration: 1500 + Math.random() * 1000,
-          ease: "inQuad",
-        });
-
-        setTimeout(() => confetti.remove(), 3000);
+      switch (effect) {
+        case "wave": {
+          const cards = valuesRef.current?.querySelectorAll("[data-card]");
+          if (cards) {
+            animate(cards, {
+              rotate: [0, -18, 18, -12, 12, -5, 5, 0],
+              translateY: [0, -6, 6, -3, 3, 0],
+              duration: 800,
+              delay: (_el, i) => (i ?? 0) * 70,
+              ease: "outBack(1.5)",
+            });
+          }
+          break;
+        }
+        case "shield": {
+          const icon = card.querySelector("[data-icon]");
+          if (icon) {
+            animate(icon, {
+              rotateY: [0, 360],
+              scale: [1, 1.3, 1],
+              duration: 600,
+              ease: "outBack(1.4)",
+            });
+          }
+          animate(card, {
+            boxShadow: [
+              "0 0 0 0px rgba(45, 106, 79, 0)",
+              "0 0 0 6px rgba(45, 106, 79, 0.5)",
+              "0 0 0 0px rgba(45, 106, 79, 0)",
+            ],
+            duration: 700,
+            ease: "outQuad",
+          });
+          break;
+        }
+        case "confetti": {
+          const clicks = incrementP2WClicks();
+          if (clicks >= 3) {
+            for (let b = 0; b < 6; b++) {
+              setTimeout(() => {
+                const bx = Math.random() * window.innerWidth * 0.8 + window.innerWidth * 0.1;
+                const by = Math.random() * window.innerHeight * 0.6 + window.innerHeight * 0.1;
+                spawnConfetti(bx, by);
+              }, b * 150);
+            }
+          } else {
+            animate(card, {
+              scale: [1, 0.95, 1.05, 1],
+              duration: 300,
+              ease: "outQuad",
+            });
+          }
+          break;
+        }
+        case "glow": {
+          const icon = card.querySelector("[data-icon]") as HTMLElement | null;
+          if (icon) {
+            animate(icon, {
+              scale: [1, 1.4, 1],
+              rotate: [0, 10, -10, 0],
+              duration: 800,
+              ease: "inOutBack",
+            });
+            // Pulsing lightbulb glow
+            icon.style.filter = "drop-shadow(0 0 0px rgba(74, 237, 217, 0))";
+            animate(icon, {
+              filter: [
+                "drop-shadow(0 0 0px rgba(74, 237, 217, 0))",
+                "drop-shadow(0 0 20px rgba(74, 237, 217, 0.9)) drop-shadow(0 0 40px rgba(74, 237, 217, 0.5))",
+                "drop-shadow(0 0 8px rgba(74, 237, 217, 0.4))",
+                "drop-shadow(0 0 16px rgba(74, 237, 217, 0.7)) drop-shadow(0 0 30px rgba(74, 237, 217, 0.3))",
+                "drop-shadow(0 0 0px rgba(74, 237, 217, 0))",
+              ],
+              duration: 1200,
+              ease: "inOutSine",
+            });
+            setTimeout(() => {
+              icon.style.filter = "";
+            }, 1300);
+          }
+          break;
+        }
       }
-    }
-  }, []);
+    },
+    []
+  );
 
   return (
     <div className="pt-24 pb-16 px-4">
@@ -153,14 +265,11 @@ export default function About() {
               <div
                 key={value.title}
                 data-reveal
-                onClick={value.easterEgg ? handleP2WClick : undefined}
-                className={`bg-[var(--color-surface)] border border-[var(--color-primary-dark)] rounded-xl p-8 transition-all duration-300 hover:border-[var(--color-primary)] hover:shadow-lg hover:shadow-[var(--color-primary)]/10 opacity-0 ${
-                  value.easterEgg
-                    ? "cursor-pointer hover:bg-[var(--color-surface-light)]"
-                    : ""
-                }`}
+                data-card
+                onClick={(e) => handleCardClick(value.effect, e)}
+                className="bg-[var(--color-surface)] border border-[var(--color-primary-dark)] rounded-xl p-8 transition-all duration-300 hover:border-[var(--color-primary)] hover:shadow-lg hover:shadow-[var(--color-primary)]/10 opacity-0 cursor-pointer select-none"
               >
-                <div className="text-[var(--color-accent)] mb-4">
+                <div data-icon className="text-[var(--color-accent)] mb-4 inline-block">
                   {value.icon}
                 </div>
                 <h3 className="font-pixel text-lg text-[var(--color-text)] mb-2">
