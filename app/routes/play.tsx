@@ -77,7 +77,7 @@ export default function Play() {
                   Version
                 </span>
                 <p className="text-[var(--color-accent)] font-mono mt-1">
-                  26.1.2
+                  1.9.X to 26.2
                 </p>
               </div>
               <div className="flex flex-wrap gap-2 mt-4">
