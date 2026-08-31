@@ -9,6 +9,24 @@ import { animate } from "animejs";
 import type { Route } from "./+types/play";
 import { CopyIP } from "~/components/CopyIP";
 import { PlatformBadge } from "~/components/PlatformBadge";
+import { ServerStatus } from "~/components/ServerStatus";
+import { getServerStatusCached } from "~/lib/server-status-cookie.server";
+
+const BASE_URL = "https://wesurvival-website.vercel.app";
+
+export async function loader({ request }: Route.LoaderArgs) {
+  const { status, setCookieHeader } = await getServerStatusCached(request);
+
+  const headers: Record<string, string> = {};
+  if (setCookieHeader) {
+    headers["Set-Cookie"] = setCookieHeader;
+  }
+
+  return Response.json(
+    { server: status },
+    { headers }
+  );
+}
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -18,10 +36,31 @@ export function meta({}: Route.MetaArgs) {
       content:
         "Connect to WeSurvival. Java and Bedrock server IPs, port numbers, and step-by-step connection guide.",
     },
-  ];
+    { property: "og:title", content: "Play — WeSurvival" },
+    {
+      property: "og:description",
+      content:
+        "Connect to WeSurvival. Java and Bedrock server IPs, port numbers, and step-by-step connection guide.",
+    },
+    { property: "og:image", content: `${BASE_URL}/logo.png` },
+    { property: "og:url", content: `${BASE_URL}/play` },
+    { name: "twitter:card", content: "summary" },
+    { name: "twitter:title", content: "Play — WeSurvival" },
+    {
+      name: "twitter:description",
+      content:
+        "Connect to WeSurvival. Java and Bedrock server IPs, port numbers, and step-by-step connection guide.",
+    },
+    { name: "twitter:image", content: `${BASE_URL}/logo.png` },
+    {
+      tagName: "link",
+      rel: "canonical",
+      href: `${BASE_URL}/play`,
+    },
+  ] satisfies Route.MetaDescriptors;
 }
 
-export default function Play() {
+export default function Play({ loaderData }: Route.ComponentProps) {
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -40,7 +79,7 @@ export default function Play() {
     <div className="pt-24 pb-16 px-4">
       <div className="max-w-4xl mx-auto" ref={contentRef}>
         {/* Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-12">
           <h1 className="font-pixel text-4xl md:text-5xl text-[var(--color-accent)] mb-4" data-reveal>
             Play Now
           </h1>
@@ -48,6 +87,11 @@ export default function Play() {
             Connect on Java or Bedrock. Premium accounts are optional —
             offline (cracked) accounts are fully supported.
           </p>
+        </div>
+
+        {/* Server Status Card */}
+        <div data-reveal className="mb-12 opacity-0">
+          <ServerStatus variant="play" />
         </div>
 
         {/* Server IPs */}

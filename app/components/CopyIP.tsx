@@ -57,6 +57,7 @@ export function CopyIP({ ip, port, label }: CopyIPProps) {
           onClick={handleCopy}
           className="px-3 py-2 bg-[var(--color-primary-dark)] hover:bg-[var(--color-primary)] text-[var(--color-text)] transition-colors"
           title="Copy to clipboard"
+          aria-label={`Copy ${fullAddress} to clipboard`}
         >
           {copied ? (
             <Checkmark24Filled className="text-[var(--color-accent)]" />

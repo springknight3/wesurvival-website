@@ -10,6 +10,8 @@ import { animate } from "animejs";
 import type { Route } from "./+types/about";
 import { incrementP2WClicks } from "~/lib/easter-eggs";
 
+const BASE_URL = "https://wesurvival-website.vercel.app";
+
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "About — WeSurvival" },
@@ -18,7 +20,28 @@ export function meta({}: Route.MetaArgs) {
       content:
         "Learn about WeSurvival's mission, values, and community guidelines. A fair, no-pay-to-win Minecraft server.",
     },
-  ];
+    { property: "og:title", content: "About — WeSurvival" },
+    {
+      property: "og:description",
+      content:
+        "Learn about WeSurvival's mission, values, and community guidelines. A fair, no-pay-to-win Minecraft server.",
+    },
+    { property: "og:image", content: `${BASE_URL}/logo.png` },
+    { property: "og:url", content: `${BASE_URL}/about` },
+    { name: "twitter:card", content: "summary" },
+    { name: "twitter:title", content: "About — WeSurvival" },
+    {
+      name: "twitter:description",
+      content:
+        "Learn about WeSurvival's mission, values, and community guidelines.",
+    },
+    { name: "twitter:image", content: `${BASE_URL}/logo.png` },
+    {
+      tagName: "link",
+      rel: "canonical",
+      href: `${BASE_URL}/about`,
+    },
+  ] satisfies Route.MetaDescriptors;
 }
 
 const CARD_EFFECTS = ["wave", "shield", "confetti", "glow"] as const;
@@ -64,9 +87,14 @@ const rules = [
   "Have fun!",
 ];
 
+const MAX_PARTICLES = 300;
+let activeParticles = 0;
+
 function spawnConfetti(cx: number, cy: number) {
+  if (activeParticles >= MAX_PARTICLES) return;
   const colors = ["#2d6a4f", "#4aedd9", "#fcdb05", "#ff3333", "#95d5b2", "#8B6914", "#d8f3dc"];
-  const pieceCount = 12 + Math.floor(Math.random() * 8);
+  const pieceCount = Math.min(12 + Math.floor(Math.random() * 8), MAX_PARTICLES - activeParticles);
+  activeParticles += pieceCount;
 
   for (let i = 0; i < pieceCount; i++) {
     const piece = document.createElement("div");
@@ -110,7 +138,10 @@ function spawnConfetti(cx: number, cy: number) {
           duration: 9500,
           ease: "inQuad",
         });
-        setTimeout(() => piece.remove(), 5000);
+        setTimeout(() => {
+          piece.remove();
+          activeParticles--;
+        }, 5000);
       }, 1400);
   }
 }
@@ -146,7 +177,7 @@ export default function About() {
   }, []);
 
   const handleCardClick = useCallback(
-    (effect: string, e: React.MouseEvent<HTMLDivElement>) => {
+    (effect: string, e: React.MouseEvent<HTMLDivElement> | React.KeyboardEvent<HTMLDivElement>) => {
       const card = e.currentTarget;
       const rect = card.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
@@ -156,12 +187,17 @@ export default function About() {
         case "wave": {
           const cards = valuesRef.current?.querySelectorAll("[data-card]");
           if (cards) {
-            animate(cards, {
+            const anim = animate(cards, {
               rotate: [0, -18, 18, -12, 12, -5, 5, 0],
               translateY: [0, -6, 6, -3, 3, 0],
               duration: 800,
               delay: (_el, i) => (i ?? 0) * 70,
               ease: "outBack(1.5)",
+            });
+            anim.then(() => {
+              cards.forEach((el) => {
+                (el as HTMLElement).style.transform = "";
+              });
             });
           }
           break;
@@ -239,6 +275,16 @@ export default function About() {
     []
   );
 
+  const handleCardKeyDown = useCallback(
+    (effect: string, e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleCardClick(effect, e);
+      }
+    },
+    [handleCardClick]
+  );
+
   return (
     <div className="pt-24 pb-16 px-4">
       <div className="max-w-4xl mx-auto">
@@ -266,8 +312,12 @@ export default function About() {
                 key={value.title}
                 data-reveal
                 data-card
+                tabIndex={0}
+                role="button"
+                aria-label={`${value.title} — click to trigger animation`}
                 onClick={(e) => handleCardClick(value.effect, e)}
-                className="bg-[var(--color-surface)] border border-[var(--color-primary-dark)] rounded-xl p-8 transition-all duration-300 hover:border-[var(--color-primary)] hover:shadow-lg hover:shadow-[var(--color-primary)]/10 opacity-0 cursor-pointer select-none"
+                onKeyDown={(e) => handleCardKeyDown(value.effect, e)}
+                className="bg-[var(--color-surface)] border border-[var(--color-primary-dark)] rounded-xl p-8 transition-all duration-300 hover:border-[var(--color-primary)] hover:shadow-lg hover:shadow-[var(--color-primary)]/10 opacity-0 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
               >
                 <div data-icon className="text-[var(--color-accent)] mb-4 inline-block">
                   {value.icon}

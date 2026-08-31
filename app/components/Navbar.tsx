@@ -5,6 +5,7 @@ import {
   Dismiss24Filled,
 } from "@fluentui/react-icons";
 import { incrementLogoClicks } from "~/lib/easter-eggs";
+import { ServerStatus } from "~/components/ServerStatus";
 
 const navLinks = [
   { to: "/", label: "Home" },
@@ -60,14 +61,17 @@ export function Navbar() {
           ))}
         </div>
 
-        {/* Mobile hamburger */}
-        <button
-          className="md:hidden p-2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
-          onClick={() => setOpen(!open)}
-          aria-label="Toggle menu"
-        >
-          {open ? <Dismiss24Filled /> : <Navigation24Filled />}
-        </button>
+        {/* Server status + Mobile hamburger */}
+        <div className="flex items-center gap-3">
+          <ServerStatus variant="navbar" />
+          <button
+            className="md:hidden p-2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+            onClick={() => setOpen(!open)}
+            aria-label={open ? "Close menu" : "Open menu"}
+          >
+            {open ? <Dismiss24Filled /> : <Navigation24Filled />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile menu */}
